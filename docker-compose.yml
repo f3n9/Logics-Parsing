@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  logics-parsing-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: logics-parsing-api:latest
+    container_name: logics-parsing-api
+
+    # GPU support - requires nvidia-docker2
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+    ports:
+      - "8000:8000"
+
+    environment:
+      - MODEL_PATH=/app/weights/Logics-Parsing
+      - PORT=8000
+      - HOST=0.0.0.0
+      - MAX_WORKERS=4
+
+    volumes:
+      # Optional: Mount outputs directory for persistence
+      - ./outputs:/app/outputs
+      # Optional: Mount custom model path (if not using baked-in model)
+      # - ./weights:/app/weights
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+
+    # Resource limits (adjust based on your GPU)
+    # mem_limit: 16g
+    # cpus: '4'
+
+    networks:
+      - logics-parsing-net
+
+networks:
+  logics-parsing-net:
+    driver: bridge
