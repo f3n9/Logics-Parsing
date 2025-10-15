@@ -1,7 +1,13 @@
 torch==2.5.1
-torchvision==0.20.1 
+torchvision==0.20.1
 torchaudio==2.5.1
 transformers==4.51.0
 accelerate==1.0.0
 flash-attn>=2.4.2
 opencv-python
+
+# API server dependencies
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+pydantic>=2.0.0
