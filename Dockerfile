@@ -1,8 +1,8 @@
 # Logics-Parsing API Server - Production Dockerfile
 # Multi-stage build for optimized image size
 
-# Stage 1: Base image with CUDA support
-FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04 AS base
+# Stage 1: Base image with CUDA support (using devel for build tools)
+FROM nvidia/cuda:12.1.0-devel-ubuntu22.04 AS base
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -11,13 +11,16 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install system dependencies
+# Install system dependencies including build tools for flash-attn
 RUN apt-get update && apt-get install -y \
     python3.10 \
+    python3.10-dev \
     python3-pip \
     git \
     wget \
     curl \
+    build-essential \
+    ninja-build \
     libgl1-mesa-glx \
     libglib2.0-0 \
     libsm6 \
@@ -38,8 +41,16 @@ WORKDIR /build
 COPY requirement.txt .
 
 # Upgrade pip and install Python dependencies
-RUN pip install --upgrade pip setuptools wheel && \
-    pip install -r requirement.txt
+# Note: flash-attn requires torch to be installed first, so we install in stages
+RUN pip install --upgrade pip setuptools wheel -i https://mirrors.cloud.tencent.com/pypi/simple && \
+    # Install PyTorch and related packages first
+    pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 -i https://mirrors.cloud.tencent.com/pypi/simple && \
+    # Install transformers and accelerate before flash-attn
+    pip install transformers==4.51.0 accelerate==1.0.0 -i https://mirrors.cloud.tencent.com/pypi/simple && \
+    # Now install flash-attn (requires torch to be available)
+    pip install flash-attn>=2.4.2 --no-build-isolation -i https://mirrors.cloud.tencent.com/pypi/simple && \
+    # Install remaining dependencies
+    pip install opencv-python fastapi uvicorn[standard] python-multipart pydantic -i https://mirrors.cloud.tencent.com/pypi/simple
 
 # Copy application files
 COPY download_model.py .
