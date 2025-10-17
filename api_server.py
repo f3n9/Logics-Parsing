@@ -54,10 +54,12 @@ class ModelManager:
                 self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
                     model_path,
                     torch_dtype=torch.bfloat16,
-                    attn_implementation="flash_attention_2",
+                    #attn_implementation="flash_attention_2",
+                    attn_implementation="sdpa",
+                    use_fast=True,
                     device_map="cuda"
                 )
-                self.processor = AutoProcessor.from_pretrained(model_path)
+                self.processor = AutoProcessor.from_pretrained(model_path, use_fast=True)
                 self.model_path = model_path
                 self.initialized = True
                 print("Model loaded successfully")

@@ -2,7 +2,7 @@
 # Multi-stage build for optimized image size
 
 # Stage 1: Base image with CUDA support (using devel for build tools)
-FROM nvidia/cuda:12.1.0-devel-ubuntu22.04 AS base
+FROM nvidia/cuda:12.1.1-devel-ubuntu22.04 AS base
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -44,13 +44,13 @@ COPY requirement.txt .
 # Note: flash-attn requires torch to be installed first, so we install in stages
 RUN pip install --upgrade pip setuptools wheel -i https://mirrors.cloud.tencent.com/pypi/simple && \
     # Install PyTorch and related packages first
-    pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 -i https://mirrors.cloud.tencent.com/pypi/simple && \
+    pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 -i https://mirrors.cloud.tencent.com/pypi/simple && \
     # Install transformers and accelerate before flash-attn
-    pip install transformers==4.51.0 accelerate==1.0.0 -i https://mirrors.cloud.tencent.com/pypi/simple && \
+    pip install transformers==4.51.0 accelerate==1.0.0 -i https://mirrors.cloud.tencent.com/pypi/simple 
     # Now install flash-attn (requires torch to be available)
-    pip install flash-attn>=2.4.2 --no-build-isolation -i https://mirrors.cloud.tencent.com/pypi/simple && \
+RUN pip install flash-attn==2.4.2 --use-pep517 --no-build-isolation -i https://mirrors.cloud.tencent.com/pypi/simple
     # Install remaining dependencies
-    pip install opencv-python fastapi uvicorn[standard] python-multipart pydantic -i https://mirrors.cloud.tencent.com/pypi/simple
+RUN pip install modelscope opencv-python fastapi uvicorn[standard] python-multipart pydantic -i https://mirrors.cloud.tencent.com/pypi/simple
 
 # Copy application files
 COPY download_model.py .
@@ -62,9 +62,9 @@ COPY example_client.py .
 # This ensures the model is baked into the image
 RUN mkdir -p weights && \
     echo "Downloading model from ModelScope..." && \
-    python download_model.py -t modelscope && \
+    #python download_model.py -t modelscope && \
     echo "Model download completed" && \
-    ls -lh weights/Logics-Parsing/
+    ls -lh weights/
 
 # Stage 3: Production runtime image
 FROM base AS production

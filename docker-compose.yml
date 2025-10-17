@@ -2,11 +2,7 @@ version: '3.8'
 
 services:
   logics-parsing-api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: production
-    image: logics-parsing-api:latest
+    image: logics-parsing-api:v2
     container_name: logics-parsing-api
 
     # GPU support - requires nvidia-docker2
@@ -31,7 +27,7 @@ services:
       # Optional: Mount outputs directory for persistence
       - ./outputs:/app/outputs
       # Optional: Mount custom model path (if not using baked-in model)
-      # - ./weights:/app/weights
+      - /opt/data/Logics-Parsing/weights:/app/weights
 
     restart: unless-stopped
 
